@@ -1,0 +1,74 @@
+services:
+  php:
+    image: php:8.4-fpm
+    build:
+      context: ./docker/php/
+      dockerfile: build/Dockerfile
+    container_name: sync_php
+    restart: no
+    expose:
+      - 9003
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ./:/var/www/syncio
+      - ./docker/php/configs/custom.ini:/usr/local/etc/php/conf.d/custom.ini
+      - ./docker/php/configs/php.ini:/usr/local/etc/php/php.ini
+      - ./docker/php/configs/php-fpm.conf:/usr/local/etc/php-fpm.conf
+      - ./docker/php/extensions/Xdebug/docker-php-ext-xdebug.ini:/usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini
+    networks:
+      - syncio
+
+  nginx:
+    image: nginx:latest
+    build:
+      context: ./docker/nginx
+      dockerfile: build/Dockerfile
+    container_name: sync_nginx
+    restart: no
+    ports:
+      - "80:80"
+    volumes:
+      - ./:/var/www/syncio
+      - ./docker/nginx/configs/nginx.conf:/etc/nginx/nginx.conf
+      - ./docker/nginx/virtualHost/syncio.com.au.conf:/etc/nginx/sites-enabled/syncio.com.au.conf
+    depends_on:
+      - php
+    networks:
+      - syncio
+
+  mysql:
+    image: mysql:latest
+    container_name: sync_mysql
+    restart: no
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./docker/mysql/config/my.cnf:/etc/my.cnf
+      - ./docker/mysql/data:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: "root"
+      MYSQL_DATABASE: "syncio"
+      MYSQL_USER: "syncio"
+      MYSQL_PASSWORD: "syncio"
+    networks:
+      - syncio
+
+  node:
+    image: node:20-alpine
+    build:
+      context: ./docker/node
+      dockerfile: build/Dockerfile
+    container_name: sync_node
+    ports:
+      - "3000:3000"
+    command: sh -c "sleep infinity"
+    volumes:
+      - ./docker/node/app:/app
+    restart: no
+    networks:
+      - syncio
+
+networks:
+  syncio:
+    driver: bridge
