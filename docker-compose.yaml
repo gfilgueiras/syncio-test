@@ -64,7 +64,7 @@ services:
       - "3000:3000"
     command: sh -c "sleep infinity"
     volumes:
-      - ./docker/node/app:/app
+      - ./frontend:/app
     restart: no
     networks:
       - syncio
