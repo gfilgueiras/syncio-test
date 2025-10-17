@@ -41,7 +41,7 @@ chmod 755 startUp.sh
 
 3. **Access the application**
 
-- Open: http://localhost
+- Open: http://localhost:8090
 
 ## API Endpoints
 

@@ -27,7 +27,7 @@ services:
     container_name: sync_nginx
     restart: no
     ports:
-      - "80:80"
+      - "8090:80"
     volumes:
       - ./:/var/www/syncio
       - ./docker/nginx/configs/nginx.conf:/etc/nginx/nginx.conf
