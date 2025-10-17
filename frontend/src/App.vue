@@ -37,6 +37,7 @@
             <div v-show="showPayload1" class="space-y-2">
               <textarea 
                 v-model="payload1Json" 
+                :disabled="ackP1 || status === 'pending' || status === 'done'"
                 rows="15"
                 class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl bg-slate-50 text-slate-900 placeholder:text-slate-400 focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100 outline-none transition font-mono text-sm"
                 placeholder="Paste or edit JSON here..."
@@ -140,71 +141,7 @@
           />
         </div>
 
-        <!-- Images -->
-        <div class="space-y-3">
-          <h3 class="text-lg font-semibold text-slate-700 flex items-center gap-2">
-            <span class="w-1 h-6 bg-purple-500 rounded-full"></span>
-            Images
-          </h3>
-          <div class="grid grid-cols-3 gap-4 px-6 py-4 bg-white rounded-xl border border-indigo-100">
-            <div class="text-center">
-              <div class="text-2xl font-bold text-emerald-600">{{ diff.images?.added?.length || 0 }}</div>
-              <div class="text-xs font-medium text-slate-500 uppercase">Added</div>
-            </div>
-            <div class="text-center">
-              <div class="text-2xl font-bold text-rose-600">{{ diff.images?.removed?.length || 0 }}</div>
-              <div class="text-xs font-medium text-slate-500 uppercase">Removed</div>
-            </div>
-            <div class="text-center">
-              <div class="text-2xl font-bold text-indigo-600">{{ diff.images?.changed?.length || 0 }}</div>
-              <div class="text-xs font-medium text-slate-500 uppercase">Modified</div>
-            </div>
-          </div>
-          
-          <div v-if="diff.images?.changed?.length" class="space-y-3">
-            <div v-for="c in diff.images.changed" :key="c.id">
-              <JsonDiff 
-                :header="`Image #${c.id}`" 
-                :before="findImageById(payload1.images, c.id)"
-                :after="findImageById(payload2.images, c.id)"
-                :changes="changesToArray(c.changes)" 
-              />
-            </div>
-          </div>
-        </div>
-
-        <!-- Variants -->
-        <div class="space-y-3">
-          <h3 class="text-lg font-semibold text-slate-700 flex items-center gap-2">
-            <span class="w-1 h-6 bg-pink-500 rounded-full"></span>
-            Variants
-          </h3>
-          <div class="grid grid-cols-3 gap-4 px-6 py-4 bg-white rounded-xl border border-indigo-100">
-            <div class="text-center">
-              <div class="text-2xl font-bold text-emerald-600">{{ diff.variants?.added?.length || 0 }}</div>
-              <div class="text-xs font-medium text-slate-500 uppercase">Added</div>
-            </div>
-            <div class="text-center">
-              <div class="text-2xl font-bold text-rose-600">{{ diff.variants?.removed?.length || 0 }}</div>
-              <div class="text-xs font-medium text-slate-500 uppercase">Removed</div>
-            </div>
-            <div class="text-center">
-              <div class="text-2xl font-bold text-indigo-600">{{ diff.variants?.changed?.length || 0 }}</div>
-              <div class="text-xs font-medium text-slate-500 uppercase">Modified</div>
-            </div>
-          </div>
-          
-          <div v-if="diff.variants?.changed?.length" class="space-y-3">
-            <div v-for="c in diff.variants.changed" :key="c.id">
-              <JsonDiff 
-                :header="`Variant #${c.id}`" 
-                :before="findVariantById(payload1.variants, c.id)"
-                :after="findVariantById(payload2.variants, c.id)"
-                :changes="changesToArray(c.changes)" 
-              />
-            </div>
-          </div>
-        </div>
+        
       </div>
     </div>
   </main>
@@ -283,41 +220,14 @@ const payload2 = {
 
 const allChanges = computed(() => {
   const changes: Array<{ field: string; from: any; to: any }> = [];
-  
-  // Root changes
-  const rc = diff.value?.rootChanges || {};
+  const rc = (diff.value?.rootChanges || {}) as Record<string, { from: any; to: any }>;
   for (const k of Object.keys(rc)) {
     changes.push({ field: k, from: rc[k].from, to: rc[k].to });
   }
-  
-  // Image changes
-  for (const img of diff.value?.images?.changed || []) {
-    for (const [field, change] of Object.entries(img.changes)) {
-      changes.push({ field: `images[${img.id}].${field}`, from: change.from, to: change.to });
-    }
-  }
-  
-  // Variant changes
-  for (const variant of diff.value?.variants?.changed || []) {
-    for (const [field, change] of Object.entries(variant.changes)) {
-      changes.push({ field: `variants[${variant.id}].${field}`, from: change.from, to: change.to });
-    }
-  }
-  
   return changes;
 });
 
-function changesToArray(obj: Record<string, { from: any; to: any }>) {
-  return Object.keys(obj).map((k) => ({ field: k, from: obj[k].from, to: obj[k].to }));
-}
-
-function findImageById(images: any[], id: number) {
-  return images.find(img => img.id === id) || {};
-}
-
-function findVariantById(variants: any[], id: number) {
-  return variants.find(v => v.id === id) || {};
-}
+// (no helper functions needed for image/variant comparisons anymore)
 
 // Reset all state to start a new comparison
 function resetComparison() {
@@ -380,7 +290,6 @@ async function startPollingDiff() {
       if (res.data?.status === 'done') {
         diff.value = res.data.diff;
         status.value = 'done';
-        console.log('✅ Status changed to "done", button should appear now');
         return;
       }
     } catch (e: any) {
