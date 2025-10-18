@@ -55,25 +55,32 @@ class PayloadController extends Controller
 
     private function recursiveDiff(array $a, array $b): array
     {
-        $diff = [];
+        $diff = []; // Array to store found differences
+
+        // Collect all unique keys from both arrays
         $keys = collect(array_keys($a))
             ->merge(array_keys($b))
             ->unique();
 
         foreach ($keys as $key) {
+            // Get values from each array for current key (null if doesn't exist)
             $itemA = $a[$key] ?? null;
             $itemB = $b[$key] ?? null;
 
+            // If values are identical, skip to next key
             if ($itemA === $itemB) {
                 continue;
             }
 
+            // If both are arrays, perform recursive comparison
             if (is_array($itemA) && is_array($itemB)) {
                 $nested = $this->recursiveDiff($itemA, $itemB);
+                // Only add if there are differences in nested array
                 if (!empty($nested)) {
                     $diff[$key] = $nested;
                 }
             } else {
+                // For primitive values, record change with 'from' and 'to'
                 $diff[$key] = [
                     'from' => $itemA,
                     'to' => $itemB,
