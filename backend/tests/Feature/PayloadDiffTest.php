@@ -39,13 +39,24 @@ class PayloadDiffTest extends TestCase
         $res = $this->getJson('/api/diff')->assertOk()->json();
 
         $this->assertEquals('done', $res['status']);
-        $this->assertArrayHasKey('rootChanges', $res['diff']);
+        $this->assertArrayHasKey('description', $res['diff']);
         $this->assertArrayHasKey('images', $res['diff']);
         $this->assertArrayHasKey('variants', $res['diff']);
 
-        $this->assertNotEmpty($res['diff']['images']['added']);
-        $this->assertNotEmpty($res['diff']['images']['changed']);
-        $this->assertNotEmpty($res['diff']['variants']['changed']);
+        // Verifica se há mudanças na descrição
+        $this->assertArrayHasKey('from', $res['diff']['description']);
+        $this->assertArrayHasKey('to', $res['diff']['description']);
+        $this->assertEquals('<p>Lorem ipsum</p>', $res['diff']['description']['from']);
+        $this->assertEquals('<p>Lorem ipsum changed</p>', $res['diff']['description']['to']);
+
+        // Verifica se há mudanças nas imagens (imagem modificada e nova imagem adicionada)
+        $this->assertNotEmpty($res['diff']['images']);
+        $this->assertCount(2, $res['diff']['images']); // Uma modificada e uma adicionada
+
+        // Verifica se há mudanças nas variantes
+        $this->assertNotEmpty($res['diff']['variants']);
+        $this->assertArrayHasKey('0', $res['diff']['variants']);
+        $this->assertArrayHasKey('inventory_quantity', $res['diff']['variants']['0']);
     }
 
     public function test_diff_pending_when_missing_payload(): void
