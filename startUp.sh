@@ -7,3 +7,4 @@ docker exec sync_node sh -c "cd /app && npm install && npm run build";
 docker compose restart nginx;
 docker exec -d sync_node sh -c "cd /app && npm run dev -- --host 0.0.0.0";
 docker exec -w /var/www/syncio/backend sync_php php artisan migrate;
+docker exec -w /var/www/syncio/backend sync_php "chmod 777 -R storage; chmod 775; chmod -R 775 database/; chown -R $USER:www-data database/"
