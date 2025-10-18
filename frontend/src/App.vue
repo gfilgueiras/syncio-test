@@ -164,10 +164,7 @@ const showPayload1 = ref(false);
 
 const diffHasChanges = computed(() => {
   const d = diff.value || {};
-  const hasRoot = d.rootChanges && Object.keys(d.rootChanges).length > 0;
-  const hasImages = d.images && ((d.images.added?.length || 0) + (d.images.removed?.length || 0) + (d.images.changed?.length || 0) > 0);
-  const hasVariants = d.variants && ((d.variants.added?.length || 0) + (d.variants.removed?.length || 0) + (d.variants.changed?.length || 0) > 0);
-  return hasRoot || hasImages || hasVariants;
+  return Object.keys(d).length > 0;
 });
 
 const defaultPayload1 = {
@@ -220,10 +217,27 @@ const payload2 = {
 
 const allChanges = computed(() => {
   const changes: Array<{ field: string; from: any; to: any }> = [];
-  const rc = (diff.value?.rootChanges || {}) as Record<string, { from: any; to: any }>;
-  for (const k of Object.keys(rc)) {
-    changes.push({ field: k, from: rc[k].from, to: rc[k].to });
+  const diffData = diff.value || {};
+  
+  function extractChanges(obj: any, prefix = ''): void {
+    for (const [key, value] of Object.entries(obj)) {
+      const fieldName = prefix ? `${prefix}.${key}` : key;
+      
+      if (value && typeof value === 'object' && 'from' in value && 'to' in value) {
+        // This is a direct change
+        changes.push({ 
+          field: fieldName, 
+          from: (value as any).from, 
+          to: (value as any).to 
+        });
+      } else if (value && typeof value === 'object') {
+        // This is a nested object, recurse into it
+        extractChanges(value, fieldName);
+      }
+    }
   }
+  
+  extractChanges(diffData);
   return changes;
 });
 
