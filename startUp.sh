@@ -1,5 +1,5 @@
 #!/bin/bash
-docker compose build --no-cache; docker compose up -d ;
+docker compose build --no-cache; docker compose up -d;
 docker exec -w /var/www/syncio/backend sync_php composer install;
 docker exec -w /var/www/syncio/backend sync_php cp .env.example .env;
 docker exec -w /var/www/syncio/backend sync_php php artisan key:generate;
